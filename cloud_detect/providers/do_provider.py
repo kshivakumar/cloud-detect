@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-import requests
+import aiohttp
 
 from . import AbstractProvider
 
@@ -16,22 +16,24 @@ class DOProvider(AbstractProvider):
         self.metadata_url = 'http://169.254.169.254/metadata/v1.json'
         self.vendor_file = '/sys/class/dmi/id/sys_vendor'
 
-    def identify(self):
+    async def identify(self):
         """
             Tries to identify DO using all the implemented options
         """
         self.logger.info('Try to identify DO')
-        return self.check_metadata_server() or self.check_vendor_file()
+        return self.check_vendor_file() or await self.check_metadata_server()
 
-    def check_metadata_server(self):
+    async def check_metadata_server(self):
         """
             Tries to identify DO via metadata server
         """
         self.logger.debug('Checking DO metadata')
         try:
-            response = requests.get(self.metadata_url).json()
-            if response['droplet_id'] > 0:
-                return True
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.metadata_url) as response:
+                    response = await response.json()
+                    if response['droplet_id'] > 0:
+                        return True
             return False
         except BaseException:
             return False

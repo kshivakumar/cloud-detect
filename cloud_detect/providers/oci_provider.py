@@ -13,7 +13,7 @@ class OCIProvider(AbstractProvider):
         self.logger = logger or logging.getLogger(__name__)
         self.vendor_file = '/sys/class/dmi/id/chassis_asset_tag'
 
-    def identify(self):
+    async def identify(self):
         """
             Tries to identify OCI using all the implemented options
         """

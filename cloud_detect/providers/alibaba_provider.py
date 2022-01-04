@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-import requests
+import aiohttp
 
 from . import AbstractProvider
 
@@ -16,22 +16,26 @@ class AlibabaProvider(AbstractProvider):
         self.metadata_url = 'http://100.100.100.200/latest/meta-data/latest/meta-data/instance/virtualization-solution'  # noqa
         self.vendor_file = '/sys/class/dmi/id/product_name'
 
-    def identify(self):
+    async def identify(self):
         """
             Tries to identify Alibaba using all the implemented options
         """
         self.logger.info('Try to identify Alibaba')
-        return self.check_metadata_server() or self.check_vendor_file()
+        return self.check_vendor_file() or await self.check_metadata_server()
 
-    def check_metadata_server(self):
+    async def check_metadata_server(self):
         """
             Tries to identify Alibaba via metadata server
         """
         self.logger.debug('Checking Alibaba metadata')
         try:
-            response = requests.get(self.metadata_url)
-            if response.text == 'ECS Virt':
-                return True
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.metadata_url) as response:
+                    response = await response.json()
+                    if response['imageId'].startswith('ami-',) and response[
+                        'instanceId'
+                    ].startswith('i-'):
+                        return True
             return False
         except BaseException:
             return False

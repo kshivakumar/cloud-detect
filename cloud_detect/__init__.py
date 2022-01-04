@@ -1,4 +1,6 @@
+import time
 import logging
+import asyncio
 
 from cloud_detect.providers import AlibabaProvider
 from cloud_detect.providers import AWSProvider
@@ -8,7 +10,39 @@ from cloud_detect.providers import GCPProvider
 from cloud_detect.providers import OCIProvider
 
 
+PROVIDERS = [AlibabaProvider, AzureProvider, DOProvider,
+             GCPProvider, OCIProvider, AWSProvider]
+
+async def process():
+    tasks = []
+    for provider in PROVIDERS:
+        task = asyncio.create_task(provider().identify(), name=provider.__name__)
+        tasks.append(task)
+    
+    result = 'unknown'
+    timeout = time.time() + 5
+    while time.time() < timeout:
+        for t in tasks:
+            if t.done() and t.result():
+                print(t.get_name(), 'done')
+                result = t.get_name()
+                break
+        else:
+            await asyncio.sleep(1)
+            continue
+        break
+
+    for t in tasks:
+        if not t.done():
+            print('Cancelling', t.get_name())
+            t.cancel()
+    
+    return result
+
 def provider(excluded=[]):
+    result = asyncio.run(process())
+    print('Result', result)
+    return
     if 'alibaba' not in excluded and AlibabaProvider().identify():
         logging.debug('Cloud_detect result is alibaba')
         return 'alibaba'
