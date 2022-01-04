@@ -8,6 +8,7 @@ class OCIProvider(AbstractProvider):
     """
         Concrete implementation of the Oracle Cloud Infrastructure cloud provider.
     """
+    identifier = 'oci'
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)

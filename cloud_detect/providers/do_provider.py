@@ -10,6 +10,7 @@ class DOProvider(AbstractProvider):
     """
         Concrete implementation of the Digital Ocean cloud provider.
     """
+    identifier = 'do'
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)

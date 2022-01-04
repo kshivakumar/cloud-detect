@@ -7,6 +7,7 @@ class AbstractProvider:
         Abstract class representing a cloud provider.
         All concrete cloud providers should implement this.
     """
+    identifier = 'unknown'
 
     @abstractmethod
     async def identify(self):

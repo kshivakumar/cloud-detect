@@ -10,6 +10,7 @@ class AzureProvider(AbstractProvider):
     """
         Concrete implementation of the Azure cloud provider.
     """
+    identifier = 'azure'
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)

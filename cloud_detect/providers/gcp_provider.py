@@ -10,6 +10,7 @@ class GCPProvider(AbstractProvider):
     """
         Concrete implementation of the GCP cloud provider.
     """
+    identifier = 'gcp'
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class GCPProvider(AbstractProvider):
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.metadata_url):
                     return True
-        except aiohttp.ClienError as e:  # noqa: F841
+        except aiohttp.ClientError as e:  # noqa: F841
             return False
 
     def check_vendor_file(self):

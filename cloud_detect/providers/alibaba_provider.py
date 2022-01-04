@@ -10,6 +10,7 @@ class AlibabaProvider(AbstractProvider):
     """
         Concrete implementation of the AWS cloud provider.
     """
+    identifier = 'alibaba'
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
