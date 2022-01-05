@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod  # noqa: F401
+from abc import ABC
+from abc import abstractmethod
 
 
 class AbstractProvider(ABC):
