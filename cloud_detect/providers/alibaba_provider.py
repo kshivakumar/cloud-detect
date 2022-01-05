@@ -32,12 +32,7 @@ class AlibabaProvider(AbstractProvider):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.metadata_url) as response:
-                    response = await response.json()
-                    if response['imageId'].startswith('ami-',) and response[
-                        'instanceId'
-                    ].startswith('i-'):
-                        return True
-            return False
+                    return await response.text() == 'ECS Virt'
         except BaseException:
             return False
 

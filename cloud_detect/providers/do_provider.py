@@ -33,9 +33,7 @@ class DOProvider(AbstractProvider):
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.metadata_url) as response:
                     response = await response.json()
-                    if response['droplet_id'] > 0:
-                        return True
-            return False
+                    return response['droplet_id'] > 0
         except BaseException:
             return False
 

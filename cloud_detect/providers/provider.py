@@ -1,8 +1,7 @@
-from abc import ABCMeta  # noqa: F401
-from abc import abstractmethod  # noqa: F401
+from abc import ABC, abstractmethod  # noqa: F401
 
 
-class AbstractProvider:
+class AbstractProvider(ABC):
     """
         Abstract class representing a cloud provider.
         All concrete cloud providers should implement this.
