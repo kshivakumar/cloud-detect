@@ -59,6 +59,6 @@ SUPPORTED_PROVIDERS = tuple(p.identifier for p in ALL_PROVIDERS)
 
 
 __all__ = (
-    provider,
-    SUPPORTED_PROVIDERS
+    'provider',
+    'SUPPORTED_PROVIDERS'
 )
