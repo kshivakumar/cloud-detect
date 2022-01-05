@@ -35,7 +35,7 @@ class AzureProvider(AbstractProvider):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.metadata_url, headers=self.headers) as response:
-                    return response.status_code == 200
+                    return response.status == 200
         except BaseException:
             return False
 
