@@ -18,41 +18,41 @@ TIMEOUT = 5  # seconds
 
 
 async def _process(providers, timeout):
-    tasks = []
-    for provider in providers:
-        task = asyncio.create_task(
-            provider().identify(),
-            name=provider.identifier,
-        )
-        tasks.append(task)
+    tasks = {
+        prov.identifier: asyncio.create_task(
+            prov().identify(),
+        ) for prov in providers
+    }
 
-    result = 'unknown'
-    timeout = time.time() + timeout
-    while time.time() < timeout:
-        for t in tasks:
-            if t.done() and t.result():
-                result = t.get_name()
-                logging.debug(f'Cloud_detect result is {result}')
-                break
+    def cancel_unfinished_tasks():
+        for t in tasks.values():
+            if not t.done():
+                t.cancel()
+
+    stoptime = time.time() + timeout
+    while tasks and time.time() < stoptime:
+        for prov in list(tasks):
+            t = tasks[prov]
+            if t.done():
+                del tasks[prov]
+                if t.result():
+                    logging.debug(f'Cloud_detect result is {prov}')
+                    cancel_unfinished_tasks()
+                    return prov
         else:
             await asyncio.sleep(0.1)
             continue
-        break
+
+    if tasks:
+        cancel_unfinished_tasks()
+        return 'timeout'
     else:
-        result = 'timeout'
-
-    for t in tasks:
-        if not t.done():
-            t.cancel()
-
-    return result
+        return 'unknown'
 
 
 def provider(excluded=[], timeout=TIMEOUT):
     providers = [p for p in ALL_PROVIDERS if p.identifier not in excluded]
-    result = asyncio.run(_process(providers, timeout))
-    print('Result', result)
-    return result
+    return asyncio.run(_process(providers, timeout))
 
 
 SUPPORTED_PROVIDERS = tuple(p.identifier for p in ALL_PROVIDERS)
