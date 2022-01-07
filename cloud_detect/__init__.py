@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+from sys import version_info
 
 from cloud_detect.providers import AlibabaProvider
 from cloud_detect.providers import AWSProvider
@@ -9,7 +10,7 @@ from cloud_detect.providers import DOProvider
 from cloud_detect.providers import GCPProvider
 from cloud_detect.providers import OCIProvider
 
-ALL_PROVIDERS = [
+__PROVIDER_CLASSES = [
     AlibabaProvider, AWSProvider, AzureProvider,
     DOProvider, GCPProvider, OCIProvider,
 ]
@@ -17,17 +18,23 @@ ALL_PROVIDERS = [
 TIMEOUT = 5  # seconds
 
 
-async def _process(providers, timeout):
+async def _identify(timeout):
     tasks = {
-        prov.identifier: asyncio.create_task(
+        prov.identifier: asyncio.ensure_future(
             prov().identify(),
-        ) for prov in providers
+        ) for prov in __PROVIDER_CLASSES
     }
 
-    def cancel_unfinished_tasks():
+    async def cancel_unfinished_tasks():
         for t in tasks.values():
             if not t.done():
-                t.cancel()
+                try:
+                    t.cancel()
+                except asyncio.CancelledError:
+                    pass
+        # This statement ensures
+        # "Task was destroyed but it is pending!" warning is not raised
+        await asyncio.gather(*tasks.values())
 
     stoptime = time.time() + timeout
     while tasks and time.time() < stoptime:
@@ -36,29 +43,32 @@ async def _process(providers, timeout):
             if t.done():
                 del tasks[prov]
                 if t.result():
-                    logging.debug(f'Cloud_detect result is {prov}')
-                    cancel_unfinished_tasks()
+                    await cancel_unfinished_tasks()
+                    logging.debug('Cloud_detect result is %s' % prov)
                     return prov
         else:
             await asyncio.sleep(0.1)
             continue
 
     if tasks:
-        cancel_unfinished_tasks()
+        await cancel_unfinished_tasks()
         return 'timeout'
     else:
         return 'unknown'
 
 
-def provider(excluded=[], timeout=TIMEOUT):
-    providers = [p for p in ALL_PROVIDERS if p.identifier not in excluded]
-    return asyncio.run(_process(providers, timeout))
+def provider(timeout=TIMEOUT):
+    if version_info.minor >= 7:
+        result = asyncio.run(_identify(timeout))
+    else:
+        loop = asyncio.new_event_loop()
+        result = loop.run_until_complete(_identify(timeout))
+        loop.close()
+    return result
 
 
-SUPPORTED_PROVIDERS = tuple(p.identifier for p in ALL_PROVIDERS)
+async def async_provider(timeout=TIMEOUT):
+    return await _identify(timeout)
 
 
-__all__ = (
-    'provider',
-    'SUPPORTED_PROVIDERS'
-)
+SUPPORTED_PROVIDERS = tuple(sorted(p.identifier for p in __PROVIDER_CLASSES))
